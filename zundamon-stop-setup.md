@@ -156,7 +156,8 @@ CWD=$(printf '%s' "$INPUT" | jq -r '.cwd // ""')
 
 PJ_BASENAME=""
 if [ -n "$CWD" ]; then
-  PJ_BASENAME=$(basename "$CWD" | sed 's/--claude-worktrees-.*//')
+  PJ_PATH=$(echo "$CWD" | sed 's|/\.claude/worktrees/.*||')
+  PJ_BASENAME=$(basename "$PJ_PATH" | sed 's/--claude-worktrees-.*//')
 fi
 
 PJ_DICT="${HOME}/.local/share/zundasay/project-names.json"
