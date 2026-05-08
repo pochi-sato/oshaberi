@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export PATH="${HOME}/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${PATH:-}"
+
+USER_DISPLAY="${ZUNDASAY_USER:-たくてぃむ}"
+
+INPUT=$(cat)
+
+LOG_DIR="${HOME}/.local/share/zundasay"
+LOG="${LOG_DIR}/hook.log"
+mkdir -p "$LOG_DIR"
+{
+  echo "---$(date -Iseconds)---"
+  echo "$INPUT"
+} >> "$LOG"
+
+EVENT=$(printf '%s' "$INPUT" | jq -r '.hook_event_name // "Stop"')
+LAST_MSG=$(printf '%s' "$INPUT" | jq -r '.last_assistant_message // ""')
+CWD=$(printf '%s' "$INPUT" | jq -r '.cwd // ""')
+
+PJ_BASENAME=""
+if [ -n "$CWD" ]; then
+  PJ_PATH=$(echo "$CWD" | sed 's|/\.claude/worktrees/.*||')
+  PJ_BASENAME=$(basename "$PJ_PATH" | sed 's/--claude-worktrees-.*//')
+fi
+
+PJ_DICT="${HOME}/.local/share/zundasay/project-names.json"
+if [ -f "$PJ_DICT" ] && [ -n "$PJ_BASENAME" ]; then
+  PJ_NAME=$(jq -r --arg key "$PJ_BASENAME" '.[$key] // $key' "$PJ_DICT" 2>/dev/null || echo "$PJ_BASENAME")
+else
+  PJ_NAME="${PJ_BASENAME:-くろーど}"
+fi
+
+extract_intent() {
+  printf '%s' "$1" | python3 -c '
+import sys, re
+text = sys.stdin.read().rstrip()
+m = re.search(r"\[([1-8])\]\s*$", text)
+if m:
+    print(m.group(1))
+' 2>/dev/null || true
+}
+
+intent_to_phrase() {
+  case "$1" in
+    1) echo "質問が来ているよ" ;;
+    2) echo "完了報告が来ているよ" ;;
+    3) echo "相談したいみたいだよ" ;;
+    4) echo "プランを見てほしいみたいだよ" ;;
+    5) echo "進めて良いか聞いているよ" ;;
+    6) echo "問題が起きてるみたいだよ" ;;
+    7) echo "選択肢が出てるよ" ;;
+    *) echo "お知らせが来ているよ" ;;
+  esac
+}
+
+case "$EVENT" in
+  Stop)
+    INTENT=$(extract_intent "$LAST_MSG")
+    PHRASE=$(intent_to_phrase "$INTENT")
+    msg="${USER_DISPLAY}さん、${PJ_NAME}のくろーどから${PHRASE}"
+    ;;
+  SubagentStop)
+    INTENT=$(extract_intent "$LAST_MSG")
+    PHRASE=$(intent_to_phrase "$INTENT")
+    msg="${USER_DISPLAY}さん、サブエージェントから${PHRASE}"
+    ;;
+  *)
+    msg="${USER_DISPLAY}さん、${PJ_NAME}のくろーどから何か来たのだ"
+    ;;
+esac
+
+nohup zundasay "$msg" </dev/null >/dev/null 2>&1 &
+disown 2>/dev/null || true
+exit 0

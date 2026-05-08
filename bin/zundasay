@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat >&2 <<EOF
+Usage: zundasay <text> [speaker_id]
+  default speaker = 3 (ずんだもん/ノーマル)
+  env: VOICEVOX_URL (default http://127.0.0.1:50021)
+       VOICEVOX_SPEAKER (default 3)
+EOF
+  exit 1
+}
+
+text="${1:-}"
+[ -z "$text" ] && usage
+
+speaker="${2:-${VOICEVOX_SPEAKER:-3}}"
+engine="${VOICEVOX_URL:-http://127.0.0.1:50021}"
+
+if ! curl -s --max-time 2 "${engine}/version" >/dev/null; then
+  echo "zundasay: VOICEVOX engine に繋がらない (${engine})" >&2
+  echo "  → VOICEVOX.app を起動するか、エンジンを立ち上げてね" >&2
+  exit 2
+fi
+
+q=$(mktemp -t zundasay_query)
+w=$(mktemp -t zundasay_wav).wav
+
+curl -sS --fail -X POST \
+  --get \
+  --data-urlencode "text=${text}" \
+  --data-urlencode "speaker=${speaker}" \
+  "${engine}/audio_query" > "$q"
+
+curl -sS --fail -X POST \
+  -H "Content-Type: application/json" \
+  --data @"$q" \
+  --output "$w" \
+  "${engine}/synthesis?speaker=${speaker}"
+
+LOCKDIR="${TMPDIR:-/tmp}/zundasay.lockdir"
+LOCK_TIMEOUT=60
+LOCK_START=$SECONDS
+while ! mkdir "$LOCKDIR" 2>/dev/null; do
+  if (( SECONDS - LOCK_START > LOCK_TIMEOUT )); then
+    rm -rf "$LOCKDIR"
+    mkdir "$LOCKDIR" 2>/dev/null || true
+    break
+  fi
+  sleep 0.1
+done
+trap 'rm -f "$q" "$w"; rm -rf "$LOCKDIR"' EXIT INT TERM
+
+afplay "$w"
