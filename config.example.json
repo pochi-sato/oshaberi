@@ -1,4 +1,10 @@
 {
-  "active_characters": ["ずんだもん", "四国めたん", "春日部つむぎ", "冥鳴ひまり", "もち子さん"],
+  "characters": {
+    "ずんだもん": true,
+    "四国めたん": true,
+    "春日部つむぎ": true,
+    "冥鳴ひまり": true,
+    "もち子さん": true
+  },
   "notify_idle": true
 }

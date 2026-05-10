@@ -60,7 +60,7 @@ if [ -f "$CONFIG" ]; then
         break
       fi
     done
-  done < <(jq -r '.active_characters[]? // empty' "$CONFIG" 2>/dev/null)
+  done < <(jq -r '(.characters // {}) | to_entries[]? | select(.value == true) | .key' "$CONFIG" 2>/dev/null)
 fi
 
 # config が無い / empty なら全キャラ fallback

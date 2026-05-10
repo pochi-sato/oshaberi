@@ -165,12 +165,18 @@ echo '{"hook_event_name":"Stop","cwd":"'$PWD'","last_assistant_message":"テス�
 
 ```json
 {
-  "active_characters": ["ずんだもん", "四国めたん"],
+  "characters": {
+    "ずんだもん": true,
+    "四国めたん": false,
+    "春日部つむぎ": true,
+    "冥鳴ひまり": true,
+    "もち子さん": false
+  },
   "notify_idle": false
 }
 ```
 
-- `active_characters`: random pool に入れたいキャラ。リストから外したキャラは呼ばれない。空配列にすると全キャラ復活 (= fallback)。利用可能なキャラ: `ずんだもん` / `四国めたん` / `春日部つむぎ` / `冥鳴ひまり` / `もち子さん`
+- `characters`: キャラ毎の on/off。`true` で random pool に入る、`false` で外れる。利用可能: `ずんだもん` / `四国めたん` / `春日部つむぎ` / `冥鳴ひまり` / `もち子さん`。全員 `false` / 空 obj / 未指定なら全キャラ active が fallback
 - `notify_idle`: `false` で「じっとしてるよ」(idle_prompt 通知) を発声しない。permission_prompt は別なので発声し続ける
 
 ### プロジェクト名読み方マップ
