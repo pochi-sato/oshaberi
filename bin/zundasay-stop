@@ -129,6 +129,56 @@ character_phrase() {
   esac
 }
 
+# Notification (permission_prompt / idle_prompt 等) 用フレーズ
+notification_phrase() {
+  local char=$1
+  local notif_type=$2
+  case "$char" in
+    ずんだもん)
+      case "$notif_type" in
+        permission_prompt) echo "許可待ちなのだ" ;;
+        idle_prompt) echo "じっとしてるのだ" ;;
+        *) echo "お知らせが来ているのだ" ;;
+      esac
+      ;;
+    四国めたん)
+      case "$notif_type" in
+        permission_prompt) echo "許可待ちよ" ;;
+        idle_prompt) echo "じっとしてるわ" ;;
+        *) echo "お知らせが来てるわ" ;;
+      esac
+      ;;
+    春日部つむぎ)
+      case "$notif_type" in
+        permission_prompt) echo "許可待ちだよ" ;;
+        idle_prompt) echo "じっとしてるよ" ;;
+        *) echo "お知らせが来てるよ" ;;
+      esac
+      ;;
+    冥鳴ひまり)
+      case "$notif_type" in
+        permission_prompt) echo "許可待ちですよ" ;;
+        idle_prompt) echo "じっとしてますよ" ;;
+        *) echo "お知らせが来てますよ" ;;
+      esac
+      ;;
+    もち子さん)
+      case "$notif_type" in
+        permission_prompt) echo "許可待ちですわ" ;;
+        idle_prompt) echo "じっとしてますわ" ;;
+        *) echo "お知らせが来てますわ" ;;
+      esac
+      ;;
+    *)
+      case "$notif_type" in
+        permission_prompt) echo "許可待ちだよ" ;;
+        idle_prompt) echo "じっとしてるよ" ;;
+        *) echo "お知らせが来てるよ" ;;
+      esac
+      ;;
+  esac
+}
+
 case "$EVENT" in
   Stop)
     INTENT=$(extract_intent "$LAST_MSG")
@@ -139,6 +189,11 @@ case "$EVENT" in
     INTENT=$(extract_intent "$LAST_MSG")
     PHRASE=$(character_phrase "$SPEAKER_NAME" "$INTENT")
     msg="${USER_DISPLAY}さん、サブエージェントから${PHRASE}"
+    ;;
+  Notification)
+    NOTIF_TYPE=$(printf '%s' "$INPUT" | jq -r '.notification_type // ""')
+    PHRASE=$(notification_phrase "$SPEAKER_NAME" "$NOTIF_TYPE")
+    msg="${USER_DISPLAY}さん、${PJ_NAME}のくろーどが${PHRASE}"
     ;;
   *)
     PHRASE=$(character_phrase "$SPEAKER_NAME" "8")
