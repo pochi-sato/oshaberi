@@ -159,6 +159,20 @@ echo '{"hook_event_name":"Stop","cwd":"'$PWD'","last_assistant_message":"テス�
 
 `bin/zundasay-stop` の `intent_to_phrase` 関数を編集して push (= symlink なので即反映、再 install 不要)。
 
+### キャラ on/off + idle 通知 on/off
+
+`~/.local/share/zundasay/config.json` を直接編集 (= user-local、リポ管理外、`config.example.json` がテンプレ):
+
+```json
+{
+  "active_characters": ["ずんだもん", "四国めたん"],
+  "notify_idle": false
+}
+```
+
+- `active_characters`: random pool に入れたいキャラ。リストから外したキャラは呼ばれない。空配列にすると全キャラ復活 (= fallback)。利用可能なキャラ: `ずんだもん` / `四国めたん` / `春日部つむぎ` / `冥鳴ひまり` / `もち子さん`
+- `notify_idle`: `false` で「じっとしてるよ」(idle_prompt 通知) を発声しない。permission_prompt は別なので発声し続ける
+
 ### プロジェクト名読み方マップ
 
 `~/.local/share/zundasay/project-names.json` を直接編集 (= user-local、リポ管理外):

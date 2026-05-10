@@ -4,6 +4,7 @@ set -euo pipefail
 export PATH="${HOME}/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${PATH:-}"
 
 USER_DISPLAY="${ZUNDASAY_USER:-たくてぃむ}"
+CONFIG="${HOME}/.local/share/zundasay/config.json"
 
 INPUT=$(cat)
 
@@ -42,12 +43,35 @@ if m:
 ' 2>/dev/null || true
 }
 
-# キャラ pool (speaker_id, name)
-SPEAKERS=(3 2 8 14 20)
-SPEAKER_NAMES=("ずんだもん" "四国めたん" "春日部つむぎ" "冥鳴ひまり" "もち子さん")
-IDX=$(( RANDOM % ${#SPEAKERS[@]} ))
-SPEAKER_ID="${SPEAKERS[$IDX]}"
-SPEAKER_NAME="${SPEAKER_NAMES[$IDX]}"
+# 全キャラ定義 (= 利用可能なキャラの allowlist。新キャラ追加はここに足す)
+ALL_CHAR_NAMES=("ずんだもん" "四国めたん" "春日部つむぎ" "冥鳴ひまり" "もち子さん")
+ALL_CHAR_IDS=(3 2 8 14 20)
+
+# config から active_characters を取得して pool 構築
+ACTIVE_NAMES=()
+ACTIVE_IDS=()
+if [ -f "$CONFIG" ]; then
+  while IFS= read -r name; do
+    [ -z "$name" ] && continue
+    for i in "${!ALL_CHAR_NAMES[@]}"; do
+      if [ "${ALL_CHAR_NAMES[$i]}" = "$name" ]; then
+        ACTIVE_NAMES+=("$name")
+        ACTIVE_IDS+=("${ALL_CHAR_IDS[$i]}")
+        break
+      fi
+    done
+  done < <(jq -r '.active_characters[]? // empty' "$CONFIG" 2>/dev/null)
+fi
+
+# config が無い / empty なら全キャラ fallback
+if [ ${#ACTIVE_NAMES[@]} -eq 0 ]; then
+  ACTIVE_NAMES=("${ALL_CHAR_NAMES[@]}")
+  ACTIVE_IDS=("${ALL_CHAR_IDS[@]}")
+fi
+
+IDX=$(( RANDOM % ${#ACTIVE_NAMES[@]} ))
+SPEAKER_NAME="${ACTIVE_NAMES[$IDX]}"
+SPEAKER_ID="${ACTIVE_IDS[$IDX]}"
 
 # キャラごとの口調別フレーズ (intent: 1-8)
 character_phrase() {
@@ -192,6 +216,16 @@ case "$EVENT" in
     ;;
   Notification)
     NOTIF_TYPE=$(printf '%s' "$INPUT" | jq -r '.notification_type // ""')
+    # idle_prompt は config で off にできる
+    if [ "$NOTIF_TYPE" = "idle_prompt" ]; then
+      NOTIFY_IDLE=true
+      if [ -f "$CONFIG" ]; then
+        NOTIFY_IDLE=$(jq -r '.notify_idle // true' "$CONFIG" 2>/dev/null)
+      fi
+      if [ "$NOTIFY_IDLE" != "true" ]; then
+        exit 0
+      fi
+    fi
     PHRASE=$(notification_phrase "$SPEAKER_NAME" "$NOTIF_TYPE")
     msg="${USER_DISPLAY}さん、${PJ_NAME}のくろーどが${PHRASE}"
     ;;

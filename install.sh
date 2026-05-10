@@ -21,6 +21,13 @@ else
   echo "ℹ project-names.json は既存のまま (上書き回避)"
 fi
 
+if [ ! -f "$HOME/.local/share/zundasay/config.json" ]; then
+  cp "$REPO/config.example.json" "$HOME/.local/share/zundasay/config.json"
+  echo "✓ config.json をテンプレから初期化"
+else
+  echo "ℹ config.json は既存のまま (上書き回避)"
+fi
+
 echo
 echo "✓ symlink 設置完了:"
 echo "  ~/.local/bin/zundasay          → $REPO/bin/zundasay"
