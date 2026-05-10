@@ -42,35 +42,110 @@ if m:
 ' 2>/dev/null || true
 }
 
-intent_to_phrase() {
-  case "$1" in
-    1) echo "質問が来ているよ" ;;
-    2) echo "完了報告が来ているよ" ;;
-    3) echo "相談したいみたいだよ" ;;
-    4) echo "プランを見てほしいみたいだよ" ;;
-    5) echo "進めて良いか聞いているよ" ;;
-    6) echo "問題が起きてるみたいだよ" ;;
-    7) echo "選択肢が出てるよ" ;;
-    *) echo "お知らせが来ているよ" ;;
+# キャラ pool (speaker_id, name)
+SPEAKERS=(3 2 8 14 20)
+SPEAKER_NAMES=("ずんだもん" "四国めたん" "春日部つむぎ" "冥鳴ひまり" "もち子さん")
+IDX=$(( RANDOM % ${#SPEAKERS[@]} ))
+SPEAKER_ID="${SPEAKERS[$IDX]}"
+SPEAKER_NAME="${SPEAKER_NAMES[$IDX]}"
+
+# キャラごとの口調別フレーズ (intent: 1-8)
+character_phrase() {
+  local char=$1
+  local intent=$2
+  case "$char" in
+    ずんだもん)
+      case "$intent" in
+        1) echo "質問が来ているのだ" ;;
+        2) echo "完了報告が来ているのだ" ;;
+        3) echo "相談したいみたいなのだ" ;;
+        4) echo "プランを見てほしいみたいなのだ" ;;
+        5) echo "進めて良いか聞いているのだ" ;;
+        6) echo "問題が起きてるみたいなのだ" ;;
+        7) echo "選択肢が出てるのだ" ;;
+        *) echo "お知らせが来ているのだ" ;;
+      esac
+      ;;
+    四国めたん)
+      case "$intent" in
+        1) echo "質問が来てるわ" ;;
+        2) echo "完了報告が来てるのよ" ;;
+        3) echo "相談したいみたいよ" ;;
+        4) echo "プランを見てほしいみたいよ" ;;
+        5) echo "進めて良いか聞いてるわ" ;;
+        6) echo "問題が起きてるみたいよ" ;;
+        7) echo "選択肢が出てるわよ" ;;
+        *) echo "お知らせが来てるわ" ;;
+      esac
+      ;;
+    春日部つむぎ)
+      case "$intent" in
+        1) echo "質問が来てるよ" ;;
+        2) echo "完了報告が来たね" ;;
+        3) echo "相談したいみたいだよ" ;;
+        4) echo "プラン見てほしいって" ;;
+        5) echo "進めて良いか聞いてるよ" ;;
+        6) echo "問題が起きてるみたいだよ" ;;
+        7) echo "選択肢が出てるよ" ;;
+        *) echo "お知らせが来てるよ" ;;
+      esac
+      ;;
+    冥鳴ひまり)
+      case "$intent" in
+        1) echo "質問が来てますよ" ;;
+        2) echo "完了報告が来ましたね" ;;
+        3) echo "相談したいみたいです" ;;
+        4) echo "プランを見てほしいそうです" ;;
+        5) echo "進めて良いか聞いてます" ;;
+        6) echo "問題が起きてるみたいです" ;;
+        7) echo "選択肢が出てますよ" ;;
+        *) echo "お知らせが来てますよ" ;;
+      esac
+      ;;
+    もち子さん)
+      case "$intent" in
+        1) echo "質問が来てますわ" ;;
+        2) echo "完了報告が来てますわ" ;;
+        3) echo "相談したいみたいですわ" ;;
+        4) echo "プランを見てほしいみたいですわ" ;;
+        5) echo "進めて良いか聞いてますわ" ;;
+        6) echo "問題が起きてるみたいですわ" ;;
+        7) echo "選択肢が出てますわ" ;;
+        *) echo "お知らせが来てますわ" ;;
+      esac
+      ;;
+    *)
+      case "$intent" in
+        1) echo "質問が来ているよ" ;;
+        2) echo "完了報告が来ているよ" ;;
+        3) echo "相談したいみたいだよ" ;;
+        4) echo "プランを見てほしいみたいだよ" ;;
+        5) echo "進めて良いか聞いているよ" ;;
+        6) echo "問題が起きてるみたいだよ" ;;
+        7) echo "選択肢が出てるよ" ;;
+        *) echo "お知らせが来てるよ" ;;
+      esac
+      ;;
   esac
 }
 
 case "$EVENT" in
   Stop)
     INTENT=$(extract_intent "$LAST_MSG")
-    PHRASE=$(intent_to_phrase "$INTENT")
+    PHRASE=$(character_phrase "$SPEAKER_NAME" "$INTENT")
     msg="${USER_DISPLAY}さん、${PJ_NAME}のくろーどから${PHRASE}"
     ;;
   SubagentStop)
     INTENT=$(extract_intent "$LAST_MSG")
-    PHRASE=$(intent_to_phrase "$INTENT")
+    PHRASE=$(character_phrase "$SPEAKER_NAME" "$INTENT")
     msg="${USER_DISPLAY}さん、サブエージェントから${PHRASE}"
     ;;
   *)
-    msg="${USER_DISPLAY}さん、${PJ_NAME}のくろーどから何か来たのだ"
+    PHRASE=$(character_phrase "$SPEAKER_NAME" "8")
+    msg="${USER_DISPLAY}さん、${PJ_NAME}のくろーどから${PHRASE}"
     ;;
 esac
 
-nohup zundasay "$msg" </dev/null >/dev/null 2>&1 &
+nohup env VOICEVOX_SPEAKER="$SPEAKER_ID" zundasay "$msg" </dev/null >/dev/null 2>&1 &
 disown 2>/dev/null || true
 exit 0
