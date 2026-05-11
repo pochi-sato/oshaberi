@@ -43,6 +43,15 @@ if m:
 ' 2>/dev/null || true
 }
 
+# [0] mute タグ検出: ユーザーへの音声通知不要 (buddy 中間報告など)
+is_muted() {
+  printf '%s' "$1" | python3 -c '
+import sys, re
+text = sys.stdin.read().rstrip()
+print("yes" if re.search(r"\[0\]\s*$", text) else "no")
+' 2>/dev/null || echo "no"
+}
+
 # 全キャラ定義 (= 利用可能なキャラの allowlist。新キャラ追加はここに足す)
 ALL_CHAR_NAMES=("ずんだもん" "四国めたん" "春日部つむぎ" "冥鳴ひまり" "もち子さん")
 ALL_CHAR_IDS=(3 2 8 14 20)
@@ -205,11 +214,17 @@ notification_phrase() {
 
 case "$EVENT" in
   Stop)
+    if [ "$(is_muted "$LAST_MSG")" = "yes" ]; then
+      exit 0
+    fi
     INTENT=$(extract_intent "$LAST_MSG")
     PHRASE=$(character_phrase "$SPEAKER_NAME" "$INTENT")
     msg="${USER_DISPLAY}さん、${PJ_NAME}のくろーどから${PHRASE}"
     ;;
   SubagentStop)
+    if [ "$(is_muted "$LAST_MSG")" = "yes" ]; then
+      exit 0
+    fi
     INTENT=$(extract_intent "$LAST_MSG")
     PHRASE=$(character_phrase "$SPEAKER_NAME" "$INTENT")
     msg="${USER_DISPLAY}さん、サブエージェントから${PHRASE}"
