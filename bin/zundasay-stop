@@ -232,12 +232,10 @@ case "$EVENT" in
   Notification)
     NOTIF_TYPE=$(printf '%s' "$INPUT" | jq -r '.notification_type // ""')
     # idle_prompt は config で off にできる
-    if [ "$NOTIF_TYPE" = "idle_prompt" ]; then
-      NOTIFY_IDLE=true
-      if [ -f "$CONFIG" ]; then
-        NOTIFY_IDLE=$(jq -r '.notify_idle // true' "$CONFIG" 2>/dev/null)
-      fi
-      if [ "$NOTIFY_IDLE" != "true" ]; then
+    # jq の `//` operator は false を null と同じく塗り潰すので、明示的に == false で判定する
+    if [ "$NOTIF_TYPE" = "idle_prompt" ] && [ -f "$CONFIG" ]; then
+      NOTIFY_IDLE=$(jq -r '.notify_idle' "$CONFIG" 2>/dev/null)
+      if [ "$NOTIFY_IDLE" = "false" ]; then
         exit 0
       fi
     fi
